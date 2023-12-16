@@ -500,6 +500,80 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'advent14'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=advent14",
+                    "--package=advent_of_code_2023"
+                ],
+                "filter": {
+                    "name": "advent14",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'advent14'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=advent14",
+                    "--package=advent_of_code_2023"
+                ],
+                "filter": {
+                    "name": "advent14",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'advent15'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=advent15",
+                    "--package=advent_of_code_2023"
+                ],
+                "filter": {
+                    "name": "advent15",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'advent15'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=advent15",
+                    "--package=advent_of_code_2023"
+                ],
+                "filter": {
+                    "name": "advent15",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
         }
     ]
 }
