@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use std::{collections::VecDeque, fs::read, usize};
+use std::{cmp::max, collections::VecDeque, fs::read, usize};
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 enum Dir {
@@ -67,42 +67,29 @@ struct Cell {
     explored: u8, // bitmask over directions
 }
 
-fn main() {
-    let input = read("inputs/16.txt").unwrap();
-    let input = String::from_utf8(input).unwrap();
-    let input = input.lines().collect_vec();
-
-    let mut grid = input
-        .iter()
-        .map(|line| {
-            line.chars()
-                .map(|c| Cell {
-                    explored: 0,
-                    content: match c {
-                        '.' => Content::Empty,
-                        '/' => Content::Slash,
-                        '\\' => Content::Backslash,
-                        '|' => Content::SplitVert,
-                        '-' => Content::SplitHori,
-                        _ => unimplemented!(),
-                    },
-                })
-                .collect_vec()
-        })
-        .collect_vec();
+fn energized(
+    grid: &Vec<Vec<Content>>,
+    start_vel: Dir,
+    start_row: usize,
+    start_col: usize,
+) -> usize {
     let ht = grid.len();
     let wd = grid[0].len();
-    let mut q = VecDeque::from(vec![(Dir::E, 0usize, 0usize)]);
+    let mut explored = grid
+        .iter()
+        .map(|row| row.iter().map(|_| 0).collect_vec())
+        .collect_vec();
+    let mut q = VecDeque::from(vec![(start_vel, start_row, start_col)]);
     // note: vel = velocity.
     while let Some((vel, row, col)) = q.pop_front() {
-        let cell = &mut grid[row][col];
+        let content = grid[row][col];
 
-        if cell.explored & vel.bitmask() != 0 {
+        if explored[row][col] & vel.bitmask() != 0 {
             continue; // already explored
         }
-        cell.explored |= vel.bitmask();
+        explored[row][col] |= vel.bitmask();
 
-        let out_vels: Vec<Dir> = match cell.content {
+        let out_vels: Vec<Dir> = match content {
             Content::Empty => vec![vel],
             Content::Slash => match vel {
                 Dir::N => vec![Dir::E],
@@ -133,15 +120,50 @@ fn main() {
         }
     }
 
-    for row in grid.iter() {
-        for cell in row {
-            print!("{}", if cell.explored != 0 { "#" } else { " " });
-        }
-        println!();
-    }
-    let answer1 = grid
+    // for row in explored.iter() {
+    //     for &cell in row {
+    //         print!("{}", if cell != 0 { "#" } else { " " });
+    //     }
+    //     println!();
+    // }
+    explored
         .iter()
-        .map(|row| row.iter().filter(|cell| cell.explored != 0).count())
-        .sum::<usize>();
-    dbg!(answer1); // 7608 too low
+        .map(|row| row.iter().filter(|&&cell| cell != 0).count())
+        .sum::<usize>()
+}
+
+fn main() {
+    let input = read("inputs/16.txt").unwrap();
+    let input = String::from_utf8(input).unwrap();
+    let input = input.lines().collect_vec();
+
+    let mut grid = input
+        .iter()
+        .map(|line| {
+            line.chars()
+                .map(|c| match c {
+                    '.' => Content::Empty,
+                    '/' => Content::Slash,
+                    '\\' => Content::Backslash,
+                    '|' => Content::SplitVert,
+                    '-' => Content::SplitHori,
+                    _ => unimplemented!(),
+                })
+                .collect_vec()
+        })
+        .collect_vec();
+
+    let answer1 = energized(&grid, Dir::E, 0, 0);
+    dbg!(answer1);
+
+    let ht = grid.len();
+    let wd = grid[0].len();
+    let foo = [
+        (0..ht).map(|z| energized(&grid, Dir::E, 0, z)).max(),
+        (0..ht).map(|z| energized(&grid, Dir::W, wd - 1, z)).max(),
+        (0..wd).map(|z| energized(&grid, Dir::S, 0, z)).max(),
+        (0..wd).map(|z| energized(&grid, Dir::N, z, wd - 1)).max(),
+    ];
+    let answer2 = foo.iter().map(|z| z.unwrap()).max().unwrap();
+    dbg!(answer2);
 }
