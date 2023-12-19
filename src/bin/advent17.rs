@@ -17,28 +17,28 @@ use Dir::*;
 fn step(d: &Dir, row: usize, col: usize, ht: usize, wd: usize) -> Option<(usize, usize)> {
     // this looks nicer on one line per direction but I guess I'll let the formatter do its job
     match d {
-        Dir::N => {
+        N => {
             if row > 0 {
                 Some((row - 1, col))
             } else {
                 None
             }
         }
-        Dir::E => {
+        E => {
             if col < wd - 1 {
                 Some((row, col + 1))
             } else {
                 None
             }
         }
-        Dir::S => {
+        S => {
             if row < ht - 1 {
                 Some((row + 1, col))
             } else {
                 None
             }
         }
-        Dir::W => {
+        W => {
             if col > 0 {
                 Some((row, col - 1))
             } else {
