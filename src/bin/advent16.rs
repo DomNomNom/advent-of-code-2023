@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use std::{cmp::max, collections::VecDeque, fs::read, usize};
+use std::{collections::VecDeque, fs::read, usize};
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 enum Dir {
@@ -60,11 +60,6 @@ enum Content {
     Backslash,
     SplitVert,
     SplitHori,
-}
-
-struct Cell {
-    content: Content,
-    explored: u8, // bitmask over directions
 }
 
 fn energized(
@@ -137,7 +132,7 @@ fn main() {
     let input = String::from_utf8(input).unwrap();
     let input = input.lines().collect_vec();
 
-    let mut grid = input
+    let grid = input
         .iter()
         .map(|line| {
             line.chars()

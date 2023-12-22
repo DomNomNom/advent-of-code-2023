@@ -38,8 +38,8 @@ fn part1solver(instructions: &Vec<(Dir, i32, u32)>) -> usize {
         min_row = min(min_row, row);
         min_col = min(min_col, col);
     }
-    let mut ht = max_row - min_row + 1;
-    let mut wd = max_col - min_col + 1;
+    let ht = max_row - min_row + 1;
+    let wd = max_col - min_col + 1;
 
     let mut grid = (0..ht)
         .map(|_| (0..wd).map(|_| 0u32).collect_vec())
@@ -132,7 +132,7 @@ fn part2solver(instructions: &Vec<(Dir, i32)>) -> i64 {
     {
         let (row2, col2) = step(row, col, &dir, dist);
         // make our life easy later by making vertical lines short and horizontal ones long.
-        // this means that crossing a rectangle in an horizontal scan always means entering / exiting the shape.
+        // this means we can determine from each rectangle whether it is an entry or exit to the overall shape.
         rects.push(match dir {
             N => Rect {
                 start_row: row2 + 1,
@@ -173,6 +173,7 @@ fn part2solver(instructions: &Vec<(Dir, i32)>) -> i64 {
         // let touchings = rects.iter().filter(|r2| touching(r, r2)).collect_vec();
         // assert!(touchings.len() == 3);
     }
+
     // now get them sorted primarily by start row
     rects.sort();
 
@@ -183,7 +184,7 @@ fn part2solver(instructions: &Vec<(Dir, i32)>) -> i64 {
     }
 
     // some assumptions that'll make our code easier.
-    for (i, r) in rects.iter().enumerate() {
+    for r in rects.iter() {
         let intersectings = rects.iter().filter(|r2| intersecting(r, r2)).collect_vec();
         assert!(intersectings.len() == 1);
     }
@@ -192,7 +193,7 @@ fn part2solver(instructions: &Vec<(Dir, i32)>) -> i64 {
         Start => r.start_row,
         End => r.start_row + r.ht, // note: this is the first row after the rect.
     };
-    let mut vertical_ranges = &rects
+    let vertical_ranges = &rects
         .into_iter()
         // .flat_map(|r| [(r.start_row, Start, r), (r.start_row + r.ht, End, r)])
         .flat_map(|r| [(Start, r), (End, r)])

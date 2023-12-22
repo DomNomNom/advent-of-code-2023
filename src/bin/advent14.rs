@@ -48,22 +48,22 @@ fn calculate_load(grid: &Vec<Vec<Cell>>) -> usize {
         .sum()
 }
 
-fn print_grid(grid: &Vec<Vec<Cell>>) {
-    for line in grid {
-        for cell in line {
-            print!(
-                "{}",
-                match cell {
-                    Cell::Empty => ".",
-                    Cell::O => "O",
-                    Cell::Hash => "#",
-                }
-            );
-        }
-        println!();
-    }
-    println!()
-}
+// fn print_grid(grid: &Vec<Vec<Cell>>) {
+//     for line in grid {
+//         for cell in line {
+//             print!(
+//                 "{}",
+//                 match cell {
+//                     Cell::Empty => ".",
+//                     Cell::O => "O",
+//                     Cell::Hash => "#",
+//                 }
+//             );
+//         }
+//         println!();
+//     }
+//     println!()
+// }
 
 fn spin_cycle(grid: &mut Vec<Vec<Cell>>) {
     while shift_all(grid, -1, 0) {}

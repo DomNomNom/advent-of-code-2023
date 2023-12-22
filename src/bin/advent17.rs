@@ -1,9 +1,6 @@
 use itertools::Itertools;
 use priority_queue::PriorityQueue;
-use std::{
-    collections::{HashMap, HashSet, VecDeque},
-    fs::read,
-};
+use std::{collections::HashMap, fs::read};
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 enum Dir {
@@ -102,12 +99,12 @@ fn min_crucible_path(
     assert!(last_tup.is_some());
 
     // visualize the answer
-    let mut gridArt = cost_grid
+    let mut grid_art = cost_grid
         .iter()
         .map(|line| line.iter().map(|_| '.').collect_vec())
         .collect_vec();
-    while let Some((row, col, vel_steps_done, vel)) = last_tup {
-        gridArt[row][col] = '#';
+    while let Some((row, col, _vel_steps_done, _vel)) = last_tup {
+        grid_art[row][col] = '#';
         let foo = last_tup.unwrap();
         let bar = to_prev.get(&foo);
         if row == 0 && col == 0 {
@@ -118,7 +115,7 @@ fn min_crucible_path(
             Some(&tup2) => Some(tup2),
         }
     }
-    for line in gridArt {
+    for line in grid_art {
         for c in line {
             print!("{}", c);
         }
