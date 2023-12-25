@@ -2,7 +2,7 @@ use chumsky::{prelude::*, text::ident};
 use itertools::Itertools;
 use std::{
     cmp::{max, min},
-    collections::{HashMap, VecDeque},
+    collections::HashMap,
     fs::read,
     ops::Range,
 };
@@ -58,9 +58,6 @@ fn parser() -> impl Parser<char, ((Vec<Workflow>, usize), Vec<Part>), Error = Si
         .then_ignore(just(','))
         .then(ident())
         .then_ignore(just("}"));
-    // .delimited_by(just(Token::Ctrl('{')), just(Token::Ctrl('}')));
-
-    // let foo = workflow_line.repeated().map(|fs, _| {});
 
     let part_assignment = one_of("xmas")
         .ignore_then(just('='))
@@ -77,8 +74,6 @@ fn parser() -> impl Parser<char, ((Vec<Workflow>, usize), Vec<Part>), Error = Si
         .then_ignore(text::newline())
         .then(parts_line.padded().repeated())
         .map(|(mut workflows, parts)| {
-            // let workflows =
-            // workflows.sort_by_key(|tup| tup.0 .0 == "in"); // ensure workflow 0 is "in"
             let label_to_index = HashMap::<String, usize>::from_iter(
                 workflows
                     .iter()
