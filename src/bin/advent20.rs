@@ -25,14 +25,10 @@ enum Gate {
     FlipFlop(FlipFlop),
     Passthrough,
 }
-// #[derive(Clone, Debug)]
-// struct WiredGate {
-//     gate: Gate,
-//     wires: OutWiring,
-// }
+type GatesAndWires = (HashMap<String, Gate>, HashMap<String, OutWiring>);
 
 fn parser(
-) -> impl Parser<char, (HashMap<String, Gate>, HashMap<String, OutWiring>), Error = Simple<char>> {
+) -> impl Parser<char, GatesAndWires, Error = Simple<char>> {
     let wires = just(" -> ")
         .ignore_then(ident().separated_by(just(", ")))
         .map(|names| names.into_iter().map(|name| (name, 0usize)).collect_vec());
@@ -71,6 +67,22 @@ fn parser(
             keys.push(name);
         }
 
+        // Creates dangling "output" nodes
+        let mut new_nodes = vec![];
+        for (_src, targets) in network.iter() {
+            for (target_name, _) in targets {
+                if !gates.contains_key(target_name) {
+                    // assert_eq!(target_name, "output"); // This should be special
+                    println!("creating dangling output node: {target_name:?}");
+                    new_nodes.push(target_name.to_string());
+                }
+            }
+        }
+        for name in new_nodes {
+            gates.insert(name.to_string(), Gate::Passthrough);
+            network.insert(name.to_string(), vec![]);
+        }
+
         // initialize the wiring and NAND input caches
         for name in keys {
             for (target_name, index) in network.get_mut(&name).unwrap().iter_mut() {
@@ -93,20 +105,21 @@ fn pulse(
     network: &HashMap<String, OutWiring>,
     target: &(String, usize),
     high: bool,
-) -> u64 {
-    let mut q = VecDeque::from(vec![target]);
-    let mut count_high = 0u64;
-    let mut count_low = 0u64;
-    while let Some((name, input_index)) = q.pop_front() {
+) -> (u64, u64) {
+    let mut q = VecDeque::from(vec![(target, high)]);
+    let mut high_count = 0u64;
+    let mut low_count = 0u64;
+    while let Some(((name, input_index), high)) = q.pop_front() {
         // apply state change
         let high = match &mut gates.get_mut(name).unwrap() {
             Gate::Nand(nand) => {
                 nand.input_cache[*input_index] = high;
-                nand.input_cache.iter().all(|state| *state)
+                // println!("nand update! {:?} but was {}", nand.input_cache, high);
+                !nand.input_cache.iter().all(|state| *state)
             }
             Gate::FlipFlop(ff) => {
                 if high {
-                    return 0;
+                    continue;
                 } else {
                     ff.state = !ff.state;
                     ff.state
@@ -117,30 +130,75 @@ fn pulse(
 
         let foo = &network[name];
         if high {
-            count_high += foo.len() as u64;
+            high_count += foo.len() as u64;
         } else {
-            count_low += foo.len() as u64;
+            low_count += foo.len() as u64;
         }
         for target in foo {
-            println!(
-                "{name} -{}-> {}[{}]",
-                if high { "high" } else { "low" },
-                target.0,
-                target.1
-            );
+            // println!(
+            //     "{name} -{}-> {}",
+            //     if high { "high" } else { "low" },
+            //     target.0,
+            //     // target.1
+            // );
 
-            q.push_back(target);
+            q.push_front((target, high));
         }
     }
-    count_high * count_low
+    // dbg!(low_count);
+    // dbg!(high_count);
+    (low_count, high_count)
 }
 
+fn separate_graph(gates: )
+
 fn main() {
-    let input = read("inputs/20test.txt").unwrap();
+    let input = read("inputs/20.txt").unwrap();
     let input = String::from_utf8(input).unwrap();
     // let input = input.lines().collect_vec();
-    let (mut gates, network) = parser().parse(input).unwrap();
+    let (mut gates, mut network) = parser().parse(input).unwrap();
+
+    gates.insert("button".to_string(), Gate::Passthrough);
+    network.insert("button".to_string(), vec![("broadcaster".to_string(), 0)]);
+
+    let original_gates = gates.clone();
+
     // dbg!(gates);
     // dbg!(network);
-    let answer1 = pulse(&mut gates, &network, &("broadcaster".to_string(), 0), false);
+    let mut low_count = 0u64;
+    let mut high_count = 0u64;
+    for _ in 0..1000 {
+        let (a, b) = pulse(&mut gates, &network, &("button".to_string(), 0), false);
+        low_count += a;
+        high_count += b;
+    }
+    let answer1 = low_count * high_count;
+    dbg!(low_count);
+    dbg!(high_count);
+    dbg!(answer1);
+
+    // part2
+    gates = original_gates;
+    if !gates.contains_key("rx") || true {
+        println!("not doing part2");
+        return;
+    }
+    gates.insert(
+        "rx".to_string(),
+        Gate::Nand(Nand {
+            input_cache: vec![true],
+        }),
+    );
+    let mut answer2 = 0u64;
+    while match gates.get("rx").unwrap() {
+        Gate::Nand(nand) => nand.input_cache[0],
+        _ => true,
+    } {
+        let _ = pulse(&mut gates, &network, &("button".to_string(), 0), false);
+        answer2 += 1;
+        if answer2 % 10000 == 0 {
+            dbg!(answer2);
+        }
+    }
+    dbg!(answer2);
 }
