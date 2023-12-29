@@ -1,0 +1,6 @@
+&lg rx
+&ls &lg 3
+&nb &lg 1
+&vc &lg 2
+&vg &lg
+button broadcaster

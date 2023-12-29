@@ -1,0 +1,27 @@
+&bt &vg
+&bt nk
+&bt pb
+&bt tl
+&bt xf
+bn &bt 7
+bn sv
+broadcaster nk
+button broadcaster
+dx &bt 1
+dx tz
+kq &bt 5
+kq tl
+nk &bt 4
+nk nn
+nn &bt 3
+nn xf
+pb kq
+qr &bt
+qr zt
+sv &bt 6
+sv dx
+tl bn
+tz &bt 2
+xf qr
+zt &bt 8
+zt pb

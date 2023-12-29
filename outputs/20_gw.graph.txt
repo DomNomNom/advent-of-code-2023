@@ -1,0 +1,110 @@
+&bt &vg
+&bt nk
+&bt pb
+&bt tl
+&bt xf
+&gp &ls
+&gp df
+&gp mq
+&gp nv
+&gp tp
+&lg rx
+&ls &lg 3
+&ml &nb
+&ml kp
+&ml sh
+&ml sr
+&ml tk
+&ml tq
+&ml vk
+&nb &lg 1
+&rb &vc
+&rb fk
+&rb hq
+&rb kj
+&rb rt
+&rb sj
+&rb zs
+&vc &lg 2
+&vg &lg
+bb &rb 2
+bb kf
+bn &bt 7
+bn sv
+broadcaster nk
+broadcaster sj
+broadcaster sr
+broadcaster tp
+button broadcaster
+cq &gp 5
+cq mq
+ct &rb 4
+ct rt
+df nv
+dx &bt 1
+dx tz
+ff &gp 7
+ff df
+fk xh
+gs &gp 2
+hq bb
+hx &rb
+jm &ml 1
+jm kp
+kf &rb 3
+kf ph
+kh &ml 3
+kj fk
+kp vk
+kq &bt 5
+kq tl
+lx &gp 4
+lx ff
+mq pr
+nk &bt 4
+nk nn
+nn &bt 3
+nn xf
+nt &gp 3
+nt gs
+nv xm
+pb kq
+pf &gp 6
+pf nt
+ph &rb 6
+ph hx
+pr &gp 1
+pr pf
+ps &ml 6
+ps qz
+qr &bt
+qr zt
+qz &ml 5
+qz kh
+rt hq
+sh zk
+sj &rb 5
+sj kj
+sr &ml
+sr vs
+sv &bt 6
+sv dx
+tk sh
+tl bn
+tp &gp 8
+tp lx
+tq jm
+tz &bt 2
+vk tk
+vs &ml 2
+vs tq
+xf qr
+xh &rb 1
+xh zs
+xm &gp
+xm cq
+zk &ml 4
+zk ps
+zs ct
+zt &bt 8
+zt pb

@@ -1,0 +1,27 @@
+&ml &nb
+&ml kp
+&ml sh
+&ml sr
+&ml tk
+&ml tq
+&ml vk
+broadcaster sr
+button broadcaster
+jm &ml 1
+jm kp
+kh &ml 3
+kp vk
+ps &ml 6
+ps qz
+qz &ml 5
+qz kh
+sh zk
+sr &ml
+sr vs
+tk sh
+tq jm
+vk tk
+vs &ml 2
+vs tq
+zk &ml 4
+zk ps

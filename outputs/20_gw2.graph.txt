@@ -1,0 +1,27 @@
+&gp &ls
+&gp df
+&gp mq
+&gp nv
+&gp tp
+broadcaster tp
+button broadcaster
+cq &gp 5
+cq mq
+df nv
+ff &gp 7
+ff df
+gs &gp 2
+lx &gp 4
+lx ff
+mq pr
+nt &gp 3
+nt gs
+nv xm
+pf &gp 6
+pf nt
+pr &gp 1
+pr pf
+tp &gp 8
+tp lx
+xm &gp
+xm cq

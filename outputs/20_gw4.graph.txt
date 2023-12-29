@@ -1,0 +1,27 @@
+&rb &vc
+&rb fk
+&rb hq
+&rb kj
+&rb rt
+&rb sj
+&rb zs
+bb &rb 2
+bb kf
+broadcaster sj
+button broadcaster
+ct &rb 4
+ct rt
+fk xh
+hq bb
+hx &rb
+kf &rb 3
+kf ph
+kj fk
+ph &rb 6
+ph hx
+rt hq
+sj &rb 5
+sj kj
+xh &rb 1
+xh zs
+zs ct
