@@ -1,9 +1,8 @@
 use chumsky::{prelude::*, text::ident};
 use itertools::Itertools;
 use std::{
-    collections::{hash_map, HashMap, HashSet, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     fs::{self, read},
-    process::Output,
 };
 
 type OutWiring = Vec<(String, usize)>; // the usize is the index into Nand input cache
@@ -356,10 +355,10 @@ fn main() {
     gates = original_gates;
     save_graph(&gates, &network, "outputs/20_gw.graph.txt");
     let gw = (gates, network);
-    let (mut gw1, mut gw2) = separate_graph(gw, vec!["ls"]);
-    let (mut gw1, mut gw3) = separate_graph(gw1, vec!["nb"]);
-    let (mut gw1, mut gw4) = separate_graph(gw1, vec!["vc"]);
-    let (mut gw1, mut gw5) = separate_graph(gw1, vec!["vg"]);
+    let (gw1, gw2) = separate_graph(gw, vec!["ls"]);
+    let (gw1, gw3) = separate_graph(gw1, vec!["nb"]);
+    let (gw1, gw4) = separate_graph(gw1, vec!["vc"]);
+    let (gw1, gw5) = separate_graph(gw1, vec!["vg"]);
     // These files are edge lists that can be plugged into a directed graph visualizer such as
     // https://csacademy.com/app/graph_editor/
     save_graph(&gw1.0, &gw1.1, "outputs/20_gw1.graph.txt");
@@ -368,7 +367,7 @@ fn main() {
     save_graph(&gw4.0, &gw4.1, "outputs/20_gw4.graph.txt");
     save_graph(&gw5.0, &gw5.1, "outputs/20_gw5.graph.txt");
 
-    // // investigate teh pulses
+    // // investigate the pulses
     // for (mut gw, listener) in [(gw2, "ls"), (gw3, "nb"), (gw4, "vc"), (gw5, "vg")] {
     //     let a = pulses_until_target_receives_low(&mut gw, listener);
     //     let b = pulses_until_target_receives_low(&mut gw, listener);
@@ -383,7 +382,7 @@ fn main() {
     // return;
 
     // now combine these answers, finding places where all of them will send a high pulse to the final nand at the same time.
-    let big_cycle_len = [(gw3, "nb"), (gw4, "vc"), (gw5, "vg")]
+    let big_cycle_len = [(gw2, "ls"), (gw3, "nb"), (gw4, "vc"), (gw5, "vg")]
         .iter_mut()
         .map(|(ref mut gw, listener)| {
             let out = pulses_until_target_receives_low(gw, listener);
@@ -392,44 +391,24 @@ fn main() {
         })
         .reduce(lcm)
         .unwrap();
-    dbg!(big_cycle_len);
-    let mut answer2 = pulses_until_target_receives_low(&mut gw2, "ls");
-    let increment = pulses_until_target_receives_low(&mut gw2, "ls");
-    // assert_ne!(answer2, increment);
-    assert_eq!(increment, pulses_until_target_receives_low(&mut gw2, "ls"));
-    let big_increment = ((big_cycle_len / increment) - 1) * increment;
 
-    while answer2 % big_cycle_len != 0 {
-        if ((answer2 + big_increment) / big_cycle_len) == answer2 / big_cycle_len {
-            answer2 += big_increment; // optimization
-        } else {
-            answer2 += increment; // haha, head empty, just CPU go brr.
-        }
-    }
-    // 206923376671842 is  too low
-    dbg!(answer2);
-
-    return;
-    // if !gates.contains_key("rx") || true {
-    //     // println!("not doing part2");
-    //     return;
-    // }
-    // gates.insert(
-    //     "rx".to_string(),
-    //     Gate::Nand(Nand {
-    //         input_cache: vec![true],
-    //     }),
-    // );
-    // let mut answer2 = 0u64;
-    // while match gates.get("rx").unwrap() {
-    //     Gate::Nand(nand) => nand.input_cache[0],
-    //     _ => true,
-    // } {
-    //     let _ = pulse(&mut gates, &network, &("button".to_string(), 0), false);
-    //     answer2 += 1;
-    //     if answer2 % 10000 == 0 {
-    //         dbg!(answer2);
+    let answer2 = big_cycle_len;
+    // // Note: at one point gw2 didn't loop back cleanly due to the evaluation being depth-first compared to breadth first.
+    // dbg!(big_cycle_len);
+    // let mut answer2 = pulses_until_target_receives_low(&mut gw2, "ls");
+    // let increment = pulses_until_target_receives_low(&mut gw2, "ls");
+    // // assert_ne!(answer2, increment);
+    // assert_eq!(increment, pulses_until_target_receives_low(&mut gw2, "ls"));
+    // let big_increment = ((big_cycle_len / increment) - 1) * increment;
+    // while answer2 % big_cycle_len != 0 {
+    //     if ((answer2 + big_increment) / big_cycle_len) == answer2 / big_cycle_len {
+    //         answer2 += big_increment; // optimization
+    //     } else {
+    //         answer2 += increment; // haha, head empty, just CPU go brr.
     //     }
     // }
-    // dbg!(answer2);
+
+    // 206923376671842 is  too low
+    // 231657829136023
+    dbg!(answer2);
 }
