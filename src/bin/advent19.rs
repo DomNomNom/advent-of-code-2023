@@ -73,7 +73,7 @@ fn parser() -> impl Parser<char, ((Vec<Workflow>, usize), Vec<Part>), Error = Si
         .separated_by(text::newline())
         .then_ignore(text::newline())
         .then(parts_line.padded().repeated())
-        .map(|(mut workflows, parts)| {
+        .map(|(workflows, parts)| {
             let label_to_index = HashMap::<String, usize>::from_iter(
                 workflows
                     .iter()
