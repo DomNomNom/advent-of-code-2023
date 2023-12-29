@@ -193,7 +193,7 @@ fn pulse_and_listen_for_low_input(
             //     // target.1
             // );
 
-            q.push_front((target, high));
+            q.push_back((target, high)); // pushing back or front may or may not matter.
         }
     }
     out
@@ -347,7 +347,8 @@ fn main() {
     let answer1 = low_count * high_count;
     // dbg!(low_count);
     // dbg!(high_count);
-    // dbg!(answer1);
+    dbg!(answer1);
+    println!();
 
     // part2
     // Theres multiple distinct Conjunctions leading up to the final conjuction.
@@ -359,12 +360,15 @@ fn main() {
     let (mut gw1, mut gw3) = separate_graph(gw1, vec!["nb"]);
     let (mut gw1, mut gw4) = separate_graph(gw1, vec!["vc"]);
     let (mut gw1, mut gw5) = separate_graph(gw1, vec!["vg"]);
+    // These files are edge lists that can be plugged into a directed graph visualizer such as
+    // https://csacademy.com/app/graph_editor/
     save_graph(&gw1.0, &gw1.1, "outputs/20_gw1.graph.txt");
     save_graph(&gw2.0, &gw2.1, "outputs/20_gw2.graph.txt");
     save_graph(&gw3.0, &gw3.1, "outputs/20_gw3.graph.txt");
     save_graph(&gw4.0, &gw4.1, "outputs/20_gw4.graph.txt");
     save_graph(&gw5.0, &gw5.1, "outputs/20_gw5.graph.txt");
 
+    // // investigate teh pulses
     // for (mut gw, listener) in [(gw2, "ls"), (gw3, "nb"), (gw4, "vc"), (gw5, "vg")] {
     //     let a = pulses_until_target_receives_low(&mut gw, listener);
     //     let b = pulses_until_target_receives_low(&mut gw, listener);
@@ -376,24 +380,34 @@ fn main() {
     //     dbg!(d);
     //     println!();
     // }
+    // return;
 
+    // now combine these answers, finding places where all of them will send a high pulse to the final nand at the same time.
     let big_cycle_len = [(gw3, "nb"), (gw4, "vc"), (gw5, "vg")]
         .iter_mut()
-        .map(|(ref mut gw, listener)| pulses_until_target_receives_low(gw, listener))
+        .map(|(ref mut gw, listener)| {
+            let out = pulses_until_target_receives_low(gw, listener);
+            assert_eq!(out, pulses_until_target_receives_low(gw, listener)); // These ones seem to reset to exactly zero.
+            out
+        })
         .reduce(lcm)
         .unwrap();
     dbg!(big_cycle_len);
     let mut answer2 = pulses_until_target_receives_low(&mut gw2, "ls");
     let increment = pulses_until_target_receives_low(&mut gw2, "ls");
+    // assert_ne!(answer2, increment);
     assert_eq!(increment, pulses_until_target_receives_low(&mut gw2, "ls"));
-    assert_ne!(answer2, increment);
-    // haha, head empty. just CPU go brr.
-    while answer2 % big_cycle_len != 0 {
-        answer2 += increment;
-    }
-    dbg!(answer2);
+    let big_increment = ((big_cycle_len / increment) - 1) * increment;
 
-    // Now figure out when  then figure out
+    while answer2 % big_cycle_len != 0 {
+        if ((answer2 + big_increment) / big_cycle_len) == answer2 / big_cycle_len {
+            answer2 += big_increment; // optimization
+        } else {
+            answer2 += increment; // haha, head empty, just CPU go brr.
+        }
+    }
+    // 206923376671842 is  too low
+    dbg!(answer2);
 
     return;
     // if !gates.contains_key("rx") || true {
