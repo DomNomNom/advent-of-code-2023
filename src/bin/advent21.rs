@@ -123,24 +123,24 @@ fn main() {
     // 851,654332
     // 982,870701
 
-    // for i in 0..target_iterations {
-    //     // grow the possibilities
-    //     possibilities = possibilities
-    //         .iter()
-    //         .flat_map(|&(row, col)| {
-    //             [
-    //                 (row - 1, col),
-    //                 (row, col - 1),
-    //                 (row + 1, col),
-    //                 (row, col + 1),
-    //             ]
-    //         })
-    //         .filter(|(row, col)| !rocks.contains(&(row % ht, col % wd)))
-    //         .collect();
-    //     if i % wd == 65 {
-    //         println!("{},{}", i, possibilities.len());
-    //     }
-    // }
+    for i in 0..target_iterations {
+        // grow the possibilities
+        possibilities = possibilities
+            .iter()
+            .flat_map(|&(row, col)| {
+                [
+                    (row - 1, col),
+                    (row, col - 1),
+                    (row + 1, col),
+                    (row, col + 1),
+                ]
+            })
+            .filter(|(row, col)| !rocks.contains(&(row % ht, col % wd)))
+            .collect();
+        if i % wd == 65 {
+            println!("{},{}", (i - 65) / wd, possibilities.len());
+        }
+    }
 
     // 0,3788
     // 1,34509
