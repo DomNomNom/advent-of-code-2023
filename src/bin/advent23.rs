@@ -191,7 +191,7 @@ fn main() {
     let _ = fs::write(format!("outputs/{filename}"), graph_string);
 
     let mut out_edges: HashMap<Coo, Vec<(Coo, usize)>> = HashMap::new();
-    for (a, b, len) in edges.into_iter() {
+    for (a, b, len) in edges.clone().into_iter() {
         (*out_edges.entry(*a).or_default()).push((*b, len));
     }
 
@@ -210,23 +210,64 @@ fn main() {
     let answer1 = find_max_dist(&out_edges, special_top) - 4; // the -4 is due to the extra nodes we added.
     dbg!(answer1);
 
-    // fn find_max_dists(out_edges: &HashMap<Coo, Vec<(Coo, usize)>>, start: Coo) -> HashSet<usize> {
+    // optimize things by not caring about coordinates and doing things via indexes.
+    let mut coos = edges
+        .iter()
+        .flat_map(|&(a, b, _len)| [*a, *b])
+        .collect_vec();
+    coos.sort();
+    coos.dedup();
+    let to_index: HashMap<Coo, u8> = coos
+        .iter()
+        .enumerate()
+        .map(|(i, coo)| (*coo, i as u8))
+        .collect();
+    let mut out_edges: HashMap<u8, Vec<(u8, u16)>> = HashMap::new();
+    for (a, b, len) in edges.clone().into_iter() {
+        (*out_edges.entry(to_index[a]).or_default()).push((to_index[b], len as u16));
+    }
+    fn find_max_dist_redo(out_edges: &HashMap<u8, Vec<(u8, u16)>>, start: u8) -> u16 {
+        match out_edges.get(&start) {
+            Some(outs) => outs
+                .iter()
+                .map(|(out, len)| find_max_dist_redo(out_edges, *out) + len)
+                .max()
+                .unwrap(),
+            None => 0,
+        }
+    }
+    let answer1_redo = find_max_dist_redo(&out_edges, to_index[&special_top]) - 4; // the -4 is due to the extra nodes we added.
+    dbg!(answer1_redo);
+
+    // for (a, b, len) in edges.into_iter() {
+    //     (*out_edges.entry(*b).or_default()).push((*a, len));
+    // }
+    // fn find_max_dist2(
+    //     out_edges: &HashMap<Coo, Vec<(Coo, usize)>>,
+    //     start: Coo,
+    //     mut visited: HashSet<Coo>,
+    // ) -> usize {
+    //     visited.insert(start);
+    //     if visited.len() < 15 {
+    //         println!("{:?}", visited);
+    //     }
     //     match out_edges.get(&start) {
-    //         Some(outs) => outs
-    //             .iter()
-    //             .flat_map(|(out, len)| {
-    //                 find_max_dists(out_edges, *out)
-    //                     .iter()
-    //                     .map(|val| val + len)
-    //                     .collect::<HashSet<_>>()
-    //             })
-    //             .collect(),
-    //         None => HashSet::from([0]),
+    //         Some(outs) => {
+    //             // let mut visited = visited.clone();
+    //             outs.iter()
+    //                 .filter_map(|(out, len)| {
+    //                     if visited.contains(out) {
+    //                         None
+    //                     } else {
+    //                         Some(find_max_dist2(out_edges, *out, visited.clone()) + len)
+    //                     }
+    //                 })
+    //                 .max()
+    //                 .unwrap_or_default()
+    //         }
+    //         None => 0,
     //     }
     // }
-    // let fart = find_max_dists(&out_edges, special_top)
-    //     .iter()
-    //     .map(|v| v - 4)
-    //     .collect_vec();
-    // dbg!(fart);
+    // let answer2 = find_max_dist2(&out_edges, special_top, HashSet::new()) - 4; // the -4 is due to the extra nodes we added.
+    // dbg!(answer2);
 }
