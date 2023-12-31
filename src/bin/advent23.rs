@@ -239,16 +239,50 @@ fn main() {
     let answer1_redo = find_max_dist_redo(&out_edges, to_index[&special_top]) - 4; // the -4 is due to the extra nodes we added.
     dbg!(answer1_redo);
 
+    // part 2
+    let mut out_edges: HashMap<u8, Vec<(u8, u16)>> = HashMap::new();
+    for (a, b, len) in edges.clone().into_iter() {
+        (*out_edges.entry(to_index[a]).or_default()).push((to_index[b], len as u16));
+        (*out_edges.entry(to_index[b]).or_default()).push((to_index[a], len as u16));
+    }
+    fn find_max_dist2(out_edges: &HashMap<u8, Vec<(u8, u16)>>, start: u8, mut visited: u64) -> u16 {
+        visited |= 1 << start;
+        if visited.count_ones() < 8 {
+            println!("{:0b}", visited);
+        }
+        match out_edges.get(&start) {
+            Some(outs) => outs
+                .iter()
+                .filter_map(|(out, len)| {
+                    if visited & (1 << out) != 0 {
+                        None
+                    } else {
+                        Some(find_max_dist2(out_edges, *out, visited.clone()) + len)
+                    }
+                })
+                .max()
+                .unwrap_or_default(),
+            None => 0,
+        }
+    }
+    let answer2 = find_max_dist2(&out_edges, to_index[&special_top], 0) - 4; // the -4 is due to the extra nodes we added.
+    dbg!(answer2);
+
+    // 5 seconds for ~100lines
+    // below is 5 minutes for 1 line.
+
+    // let mut out_edges: HashMap<Coo, Vec<(Coo, usize)>> = HashMap::new();
     // for (a, b, len) in edges.into_iter() {
+    //     (*out_edges.entry(*a).or_default()).push((*b, len));
     //     (*out_edges.entry(*b).or_default()).push((*a, len));
     // }
-    // fn find_max_dist2(
+    // fn find_max_dist_original_slow(
     //     out_edges: &HashMap<Coo, Vec<(Coo, usize)>>,
     //     start: Coo,
     //     mut visited: HashSet<Coo>,
     // ) -> usize {
     //     visited.insert(start);
-    //     if visited.len() < 15 {
+    //     if visited.len() < 8 {
     //         println!("{:?}", visited);
     //     }
     //     match out_edges.get(&start) {
@@ -259,7 +293,9 @@ fn main() {
     //                     if visited.contains(out) {
     //                         None
     //                     } else {
-    //                         Some(find_max_dist2(out_edges, *out, visited.clone()) + len)
+    //                         Some(
+    //                             find_max_dist_original_slow(out_edges, *out, visited.clone()) + len,
+    //                         )
     //                     }
     //                 })
     //                 .max()
@@ -268,6 +304,6 @@ fn main() {
     //         None => 0,
     //     }
     // }
-    // let answer2 = find_max_dist2(&out_edges, special_top, HashSet::new()) - 4; // the -4 is due to the extra nodes we added.
+    // let answer2 = find_max_dist_original_slow(&out_edges, special_top, HashSet::new()) - 4; // the -4 is due to the extra nodes we added.
     // dbg!(answer2);
 }
