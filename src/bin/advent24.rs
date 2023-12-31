@@ -120,12 +120,16 @@ fn part2(particles: Vec<PosVel>) {
             .map(|p| cpa_distance(throw, p))
             .sum::<f64>()
     };
-    let cost_fn2 = |sample: &[f64; 6]| -> f64 {
+    let cost_fn2 = |sample: &[f64; 2]| -> f64 {
+        let a = particles[0].0 + particles[0].1 * sample[0];
+        let b = particles[1].0 + particles[1].1 * sample[1];
         cost_fn(&(
             // Vec3D::new(sample[0].floor(), sample[1].floor(), sample[2].floor()),
             // Vec3D::new(sample[3].floor(), sample[4].floor(), sample[5].floor()),
-            Vec3D::new(sample[0], sample[1], sample[2]),
-            Vec3D::new(sample[3], sample[4], sample[5]),
+            // Vec3D::new(sample[0], sample[1], sample[2]),
+            // Vec3D::new(sample[3], sample[4], sample[5]),
+            a,
+            b - a,
         ))
     };
 
@@ -135,23 +139,25 @@ fn part2(particles: Vec<PosVel>) {
     // let mut samples =
 
     let mut rng = StdRng::seed_from_u64(4);
-    let mut distribution: [Normal<f64>; 6] = [
+    let mut distribution: [Normal<f64>; 2] = [
         // Normal::new(319458320561568., 2676204445423380000.).unwrap(),
         // Normal::new(319458320561568., 2676204445423380000.).unwrap(),
         // Normal::new(319458320561568., 2676204445423380000.).unwrap(),
         // Normal::new(0., 10000.).unwrap(),
         // Normal::new(0., 10000.).unwrap(),
         // Normal::new(0., 10000.).unwrap(),
-        Normal::new(20., 10.).unwrap(),
-        Normal::new(10., 10.).unwrap(),
-        Normal::new(10., 10.).unwrap(),
-        Normal::new(0., 10.).unwrap(),
-        Normal::new(0., 10.).unwrap(),
-        Normal::new(0., 10.).unwrap(),
+        // Normal::new(20., 10.).unwrap(),
+        // Normal::new(10., 10.).unwrap(),
+        // Normal::new(10., 10.).unwrap(),
+        // Normal::new(0., 10.).unwrap(),
+        // Normal::new(0., 10.).unwrap(),
+        // Normal::new(0., 10.).unwrap(),
+        Normal::new(0., 1000.).unwrap(),
+        Normal::new(0., 1000.).unwrap(),
     ];
 
     for _ in 0..1000 {
-        let sample_size = 20000;
+        let sample_size = 2000;
         let elite_size = 100;
         let mut samples = (0..sample_size)
             .map(|_| distribution.map(|dist| dist.sample(&mut rng)))
@@ -176,7 +182,8 @@ fn part2(particles: Vec<PosVel>) {
             let deviation = deviation * 1.5;
             Normal::new(mean, deviation).unwrap()
         };
-        distribution = [fit(0), fit(1), fit(2), fit(3), fit(4), fit(5)];
+        // distribution = [fit(0), fit(1), fit(2), fit(3), fit(4), fit(5)];
+        distribution = [fit(0), fit(1)];
         // dbg!(distribution.map(|d| d.std_dev()));
         if distribution.iter().all(|d| d.std_dev() < 0.1) {
             println!("converged!");
