@@ -19,6 +19,7 @@ fn approach_times(track1: &PosVel, track2: &PosVel) -> (f64, f64) {
 
     // compute the line parameters of the two closest points
     if (big_d < 0.00000001) {
+        println!("parallel");
         // the lines are almost parallel
         (0.0, if b > c { d / b } else { e / c }) // use the largest denominator
     } else {
@@ -31,7 +32,7 @@ fn approach_times(track1: &PosVel, track2: &PosVel) -> (f64, f64) {
 }
 
 fn main() {
-    let input = read("inputs/24test.txt").unwrap();
+    let input = read("inputs/24.txt").unwrap();
     let input = String::from_utf8(input).unwrap();
     let input = input.lines().collect_vec();
     let mut particles = input
@@ -73,38 +74,41 @@ fn main() {
         assert!(vel.mag() > 0.1);
     }
 
-    let answer1 = 0;
+    let mut answer1 = 0;
     let test_region_bot = Vec3D::new(7., 7., -100.);
     let test_region_top = Vec3D::new(27., 27., 100.);
+    let test_region_bot = Vec3D::new(200000000000000., 200000000000000., -100.);
+    let test_region_top = Vec3D::new(400000000000000., 400000000000000., 100.);
     for (i, a) in particles.iter().enumerate() {
         for (_j, b) in particles[0..i].iter().enumerate() {
-            if b.1.cross(a.1).mag() < 0.000001 {
-                println!("{} {} parallel", i, _j);
+            if b.1.cross(a.1).mag() < 0.001 {
+                // println!("{} {} parallel", i, _j);
                 continue; // parallel paths
             }
             let (ta, tb) = approach_times(a, b);
+
+            if ta < 0. || tb < 0. {
+                // println!("{} {} in past", i, _j);
+                continue;
+            }
+
             let pa = a.0 + a.1 * ta;
             let pb = b.0 + b.1 * tb;
-            assert!(pa.distance_to(pb) < 0.000001);
+            assert!(pa.distance_to(pb) < 0.00001 * pa.mag());
             // println!("{} {} -> location={} {} at t={} {}", i, _j, pa, pb, ta, tb);
-
-            // let b_in_a_frame = (b.0 - a.0, );
-            // if b_in_a_frame.1.mag() < 0.00001 {
-            //     println!("{} {} parallel", i, _j);
-            //     continue; // parallel paths
-            // }
-            // let v = b_in_a_frame.0.dot(b_in_a_frame.1);
-            // if v >= 0. {
-            //     println!("{} {} travelling apart", i, _j);
-            //     continue; // travelling away or orthogonal
-            // }
-
-            // println!("{} {} possible intersect", i, _j);
-            // // solve this linear eqution
-            // // intersect = a.0 + t1 * a.1
-            // // intersect = b.0 + t2 * b.1
-            // //
-            // // a.0 - b.0 = t2 * b.1 - t1 * a.1
+            if false // style
+                || pa.x < test_region_bot.x
+                || pa.y < test_region_bot.y
+                || pa.z < test_region_bot.z
+                || pa.x >= test_region_top.x
+                || pa.y >= test_region_top.y
+                || pa.z >= test_region_top.z
+            {
+                // println!("{} {} out of box at location={:?}", i, _j, pa);
+                continue;
+            }
+            // println!("{} {} all good", i, _j);
+            answer1 += 1;
         }
     }
     dbg!(answer1);
