@@ -120,17 +120,26 @@ fn part2(particles: Vec<PosVel>) {
             .map(|p| cpa_distance(throw, p))
             .sum::<f64>()
     };
-    let cost_fn2 = |sample: &[f64; 2]| -> f64 {
-        let a = particles[0].0 + particles[0].1 * sample[0];
-        let b = particles[1].0 + particles[1].1 * sample[1];
-        cost_fn(&(
-            // Vec3D::new(sample[0].floor(), sample[1].floor(), sample[2].floor()),
-            // Vec3D::new(sample[3].floor(), sample[4].floor(), sample[5].floor()),
-            // Vec3D::new(sample[0], sample[1], sample[2]),
-            // Vec3D::new(sample[3], sample[4], sample[5]),
-            a,
-            b - a,
-        ))
+    let cost_fn2 = |sample: &Vec<f64>| -> f64 {
+        let mut positions = particles
+            .iter()
+            .zip(sample.iter())
+            .map(|(p, t)| p.0 + p.1 * *t);
+        // .collect_vec();
+        let first = positions.next().unwrap();
+        // let pos_iter = positions
+        let mut diffs = positions.map(|pos| (pos - first));
+        let first_diff = diffs.next().unwrap();
+        diffs.map(|diff| diff.cross(first_diff).mag()).sum() // something cheap that acts like principal component analysis
+
+        // cost_fn(&(
+        //     // Vec3D::new(sample[0].floor(), sample[1].floor(), sample[2].floor()),
+        //     // Vec3D::new(sample[3].floor(), sample[4].floor(), sample[5].floor()),
+        //     // Vec3D::new(sample[0], sample[1], sample[2]),
+        //     // Vec3D::new(sample[3], sample[4], sample[5]),
+        //     a,
+        //     b - a,
+        // ))
     };
 
     // dbg!(cost_fn2(&[24., 13., 10., -3., 1., 2.]));
@@ -139,28 +148,37 @@ fn part2(particles: Vec<PosVel>) {
     // let mut samples =
 
     let mut rng = StdRng::seed_from_u64(4);
-    let mut distribution: [Normal<f64>; 2] = [
-        // Normal::new(319458320561568., 2676204445423380000.).unwrap(),
-        // Normal::new(319458320561568., 2676204445423380000.).unwrap(),
-        // Normal::new(319458320561568., 2676204445423380000.).unwrap(),
-        // Normal::new(0., 10000.).unwrap(),
-        // Normal::new(0., 10000.).unwrap(),
-        // Normal::new(0., 10000.).unwrap(),
-        // Normal::new(20., 10.).unwrap(),
-        // Normal::new(10., 10.).unwrap(),
-        // Normal::new(10., 10.).unwrap(),
-        // Normal::new(0., 10.).unwrap(),
-        // Normal::new(0., 10.).unwrap(),
-        // Normal::new(0., 10.).unwrap(),
-        Normal::new(0., 1000.).unwrap(),
-        Normal::new(0., 1000.).unwrap(),
-    ];
+    // let mut distribution: [Normal<f64>; 2] = [
+    //     // Normal::new(319458320561568., 2676204445423380000.).unwrap(),
+    //     // Normal::new(319458320561568., 2676204445423380000.).unwrap(),
+    //     // Normal::new(319458320561568., 2676204445423380000.).unwrap(),
+    //     // Normal::new(0., 10000.).unwrap(),
+    //     // Normal::new(0., 10000.).unwrap(),
+    //     // Normal::new(0., 10000.).unwrap(),
+    //     // Normal::new(20., 10.).unwrap(),
+    //     // Normal::new(10., 10.).unwrap(),
+    //     // Normal::new(10., 10.).unwrap(),
+    //     // Normal::new(0., 10.).unwrap(),
+    //     // Normal::new(0., 10.).unwrap(),
+    //     // Normal::new(0., 10.).unwrap(),
+    //     Normal::new(0., 1000.).unwrap(),
+    //     Normal::new(0., 1000.).unwrap(),
+    // ];
+    let mut distribution = particles
+        .iter()
+        .map(|_| Normal::new(100., 100.).unwrap())
+        .collect_vec();
 
     for _ in 0..1000 {
-        let sample_size = 2000;
-        let elite_size = 100;
+        let sample_size = 200;
+        let elite_size = 40;
         let mut samples = (0..sample_size)
-            .map(|_| distribution.map(|dist| dist.sample(&mut rng)))
+            .map(|_| {
+                distribution
+                    .iter()
+                    .map(|dist| dist.sample(&mut rng))
+                    .collect_vec()
+            })
             .collect_vec();
         samples.sort_by_cached_key(|sample| OrderedFloat(cost_fn2(sample)));
         // dbg!(samples.iter().map(cost_fn2).collect_vec());
@@ -179,23 +197,26 @@ fn part2(particles: Vec<PosVel>) {
                 .sum::<f64>()
                 / elite_size as f64)
                 .sqrt();
-            let deviation = deviation * 1.5;
+            // let deviation = deviation * 1.4;
             Normal::new(mean, deviation).unwrap()
         };
         // distribution = [fit(0), fit(1), fit(2), fit(3), fit(4), fit(5)];
-        distribution = [fit(0), fit(1)];
+        distribution = (0..distribution.len()).map(fit).collect();
         // dbg!(distribution.map(|d| d.std_dev()));
-        if distribution.iter().all(|d| d.std_dev() < 0.1) {
+        if distribution.iter().all(|d| d.std_dev() < 0.0001) {
             println!("converged!");
             break;
         }
     }
-    dbg!(distribution.map(|normal| normal.mean()));
+    dbg!(distribution
+        .iter()
+        .map(|normal| normal.mean())
+        .collect_vec());
     dbg!(answer2);
 }
 
 fn main() {
-    let input = read("inputs/24test.txt").unwrap();
+    let input = read("inputs/24.txt").unwrap();
     let input = String::from_utf8(input).unwrap();
     let input = input.lines().collect_vec();
     let mut particles = input
