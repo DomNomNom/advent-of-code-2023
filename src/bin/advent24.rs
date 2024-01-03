@@ -2,10 +2,70 @@ use itertools::Itertools;
 use ordered_float::OrderedFloat;
 use rand::prelude::*;
 use rand_distr::Normal;
-use std::fs::read;
+use std::cmp::min;
+use std::fs::{self, read};
 use vec3D::Vec3D;
+use yamakan::domains::ContinuousDomain;
+use yamakan::optimizers::nelder_mead::NelderMeadOptimizer;
 
 type PosVel = (Vec3D, Vec3D);
+
+type Mat3x3 = [[f64; 3]; 3]; // arrays of rows
+
+fn yaw_pitch_matrix(yaw: f64, pitch: f64) -> Mat3x3 {
+    mat_mul(&yaw_matrix(yaw), &pitch_matrix(pitch))
+}
+
+// rotates about the vertical (z) axis.
+#[rustfmt::skip]
+fn yaw_matrix(yaw: f64) -> Mat3x3 {
+    [
+        [ yaw.cos(), yaw.sin(), 0.0],
+        [-yaw.sin(), yaw.cos(), 0.0],
+        [       0.0,       0.0, 1.0],
+    ]
+}
+
+// rotates about the horizontal y axis.
+#[rustfmt::skip]
+fn pitch_matrix(pitch: f64) -> Mat3x3 {
+    [
+        [ pitch.cos(), 0.0, pitch.sin()],
+        [         0.0, 1.0,         0.0],
+        [-pitch.sin(), 0.0, pitch.cos()],
+    ]
+}
+// computes `AB` with matrix multiplication
+fn mat_mul(a: &Mat3x3, b: &Mat3x3) -> Mat3x3 {
+    let mut out = Mat3x3::default();
+    for i in 0..3 {
+        for j in 0..3 {
+            out[i][j] = (0..3).map(|k| a[i][k] * b[k][j]).sum::<f64>();
+        }
+    }
+    out
+}
+// Computes `Av` with matrix-vector multiplication
+fn mat_vec_mul(a: &Mat3x3, v: &Vec3D) -> Vec3D {
+    Vec3D::new(
+        a[0][0] * v.x + a[0][1] * v.y + a[0][2] * v.z,
+        a[1][0] * v.x + a[1][1] * v.y + a[1][2] * v.z,
+        a[2][0] * v.x + a[2][1] * v.y + a[2][2] * v.z,
+    )
+}
+
+fn transpose(a: &Mat3x3) -> Mat3x3 {
+    let mut out = Mat3x3::default();
+    for i in 0..3 {
+        for j in 0..3 {
+            out[i][j] = a[j][i];
+        }
+    }
+    out
+}
+fn vec_to_array(v: &Vec3D) -> [f64; 3] {
+    [v.x, v.y, v.z]
+}
 
 // adapted from dist3D_Line_to_Line from https://web.archive.org/web/20180704020228/http://www.geomalgorithms.com/a07-_distance.html
 fn approach_times(track1: &PosVel, track2: &PosVel) -> (f64, f64) {
@@ -112,40 +172,171 @@ fn part1(mut particles: Vec<PosVel>) {
     dbg!(answer1);
 }
 
+fn cross_entropy_method_optimization<F>(
+    cost_fn: F,
+    mut distribution: Vec<Normal<f64>>,
+    mut rng: &mut StdRng,
+    sample_size: usize,
+    elite_size: usize,
+) -> Vec<f64>
+where
+    F: Fn(&Vec<f64>) -> f64,
+{
+    let mut all_samples = vec![];
+    let mut best_sample: Vec<f64> = vec![];
+
+    loop {
+        let sample_size = 1000;
+        let elite_size = 20;
+        let mut samples = (0..sample_size)
+            .map(|_| {
+                distribution
+                    .iter()
+                    .map(|dist| dist.sample(rng))
+                    .collect_vec()
+            })
+            .collect_vec();
+        all_samples.append(&mut samples.clone());
+        samples.sort_by_cached_key(|sample| OrderedFloat(cost_fn(sample)));
+        // dbg!(samples.iter().map(cost_fn2).collect_vec());
+
+        // Fit a new distribution to the best samples
+        let elites = samples[0..elite_size].to_vec();
+        dbg!(cost_fn(&elites[elite_size - 1]));
+        let fit = |i| {
+            let mean = elites.iter().map(|sample| sample[i]).sum::<f64>() / elite_size as f64;
+            let deviation = (elites
+                .iter()
+                .map(|sample| {
+                    let diff = sample[i] - mean;
+                    diff * diff
+                })
+                .sum::<f64>()
+                / elite_size as f64)
+                .sqrt();
+            // let deviation = deviation * 1.4;
+            Normal::new(mean, deviation).unwrap()
+        };
+        distribution = (0..distribution.len()).map(fit).collect();
+        // dbg!(distribution.map(|d| d.std_dev()));
+        if distribution.iter().all(|d| d.std_dev() < 0.000000000001) {
+            return elites[0].clone();
+        }
+    }
+}
+
 fn part2(particles: Vec<PosVel>) {
     let answer2 = 0;
-    let cost_fn = |throw: &PosVel| -> f64 {
-        particles
-            .iter()
-            .map(|p| cpa_distance(throw, p))
-            .sum::<f64>()
-    };
-    let cost_fn2 = |sample: &Vec<f64>| -> f64 {
-        let mut positions = particles
-            .iter()
-            .zip(sample.iter())
-            .map(|(p, t)| p.0 + p.1 * *t);
-        // .collect_vec();
-        let first = positions.next().unwrap();
-        // let pos_iter = positions
-        let mut diffs = positions.map(|pos| (pos - first));
-        let first_diff = diffs.next().unwrap();
-        diffs.map(|diff| diff.cross(first_diff).mag()).sum() // something cheap that acts like principal component analysis
+    // let cost_fn = |throw: &PosVel| -> f64 {
+    //     particles
+    //         .iter()
+    //         .map(|p| cpa_distance(throw, p))
+    //         .sum::<f64>()
+    // };
+    // let cost_fn = |sample: &Vec<f64>| -> f64 {
+    //     let mut positions = particles
+    //         .iter()
+    //         .zip(sample.iter())
+    //         .map(|(p, t)| p.0 + p.1 * *t);
+    //     // .collect_vec();
+    //     let first = positions.next().unwrap();
+    //     // let pos_iter = positions
 
-        // cost_fn(&(
-        //     // Vec3D::new(sample[0].floor(), sample[1].floor(), sample[2].floor()),
-        //     // Vec3D::new(sample[3].floor(), sample[4].floor(), sample[5].floor()),
-        //     // Vec3D::new(sample[0], sample[1], sample[2]),
-        //     // Vec3D::new(sample[3], sample[4], sample[5]),
-        //     a,
-        //     b - a,
-        // ))
-    };
+    //     // let mut diffs = positions.map(|pos| (pos - first));
+    //     // let first_diff = diffs.next().unwrap();
+    //     // diffs.map(|diff| diff.cross(first_diff).mag()).sum() // something cheap that acts like principal component analysis
 
+    //     let mut diffs = positions.tuple_windows::<(_, _)>().map(|(a, b)| (b - a));
+    //     diffs
+    //         .tuple_windows::<(_, _)>()
+    //         .map(|(a, b)| a.cross(b).mag())
+    //         .sum::<f64>()
+    //     // let first_diff = diffs.next().unwrap();
+    //     // diffs.map(|diff| diff.cross(first_diff).mag()).sum() // something cheap that acts like principal component analysis
+
+    //     // cost_fn(&(
+    //     //     // Vec3D::new(sample[0].floor(), sample[1].floor(), sample[2].floor()),
+    //     //     // Vec3D::new(sample[3].floor(), sample[4].floor(), sample[5].floor()),
+    //     //     // Vec3D::new(sample[0], sample[1], sample[2]),
+    //     //     // Vec3D::new(sample[3], sample[4], sample[5]),
+    //     //     a,
+    //     //     b - a,
+    //     // ))
+    // };
     // dbg!(cost_fn2(&[24., 13., 10., -3., 1., 2.]));
     // return;
 
+    let cost_fn = |sample: &Vec<f64>| -> f64 {
+        if sample[2] < 0. {
+            return f64::MAX;
+        }
+        // a matrix that makes z face the direction of our sample throw direction
+        let s = Vec3D::new(sample[0], sample[1], sample[2]).norm();
+        let basis_y = s.cross(Vec3D::new(1., 0., 0.)).norm();
+        let sample_basis: Mat3x3 = [
+            vec_to_array(&basis_y),
+            vec_to_array(&s.cross(basis_y).norm()),
+            vec_to_array(&s),
+        ];
+        let flattened_basis: Mat3x3 = [sample_basis[0], sample_basis[1], [0., 0., 0.]];
+        // project everything onto the plane to which s is the normal.
+        let flattened_along_s = particles.iter().map(|p| {
+            (
+                mat_vec_mul(&flattened_basis, &p.0),
+                mat_vec_mul(&flattened_basis, &p.1),
+            )
+        });
+        let intersection_points_xy = flattened_along_s
+            .tuple_windows::<(_, _)>()
+            .filter_map(|(a, b)| {
+                if b.1.cross(a.1).mag() < 0.001 {
+                    // println!("{} {} parallel", i, _j);
+                    None
+                } else {
+                    let (ta, _tb) = approach_times(&a, &b);
+                    Some(a.0 + a.1 * ta)
+                }
+            })
+            .collect_vec();
+        // dbg!(intersection_points_xy.clone());
+        let mut mean = Vec3D::zeros();
+        for p in intersection_points_xy.iter() {
+            mean += *p;
+        }
+        mean /= intersection_points_xy.len() as f64;
+
+        // dbg!(mean);
+        // let unflatten = transpose(&sample_basis);
+        // let unflattened_offset = mat_vec_mul(&unflatten, &mean);
+        // dbg!(unflattened_offset);
+
+        let mut average_distance = 0.;
+        for p in intersection_points_xy.iter() {
+            average_distance += mean.distance_to(*p);
+        }
+        average_distance /= intersection_points_xy.len() as f64;
+        average_distance
+    };
+    let mut distribution = (0..3).map(|_| Normal::new(0., 10.).unwrap()).collect_vec();
+    let mut rng = StdRng::seed_from_u64(4);
+    let best_sample = cross_entropy_method_optimization(cost_fn, distribution, &mut rng, 1000, 20);
+    // dbg!(cost_fn2(&[24., 13., 10., -3., 1., 2.]));
+    // return;
+
+    // dbg!(cost_fn(&vec![-3., 1., 2.]));
+    // return;
+
     // let mut samples =
+
+    // let mut rng = StdRng::seed_from_u64(4);
+    // let foo: NelderMeadOptimizer<StdRng> = NelderMeadOptimizer::new(
+    //     particles
+    //         .iter()
+    //         .map(|_| ContinuousDomain::new(-100., 100.).unwrap())
+    //         .collect_vec(),
+    //     rng,
+    // )
+    // .unwrap();
 
     let mut rng = StdRng::seed_from_u64(4);
     // let mut distribution: [Normal<f64>; 2] = [
@@ -164,54 +355,54 @@ fn part2(particles: Vec<PosVel>) {
     //     Normal::new(0., 1000.).unwrap(),
     //     Normal::new(0., 1000.).unwrap(),
     // ];
-    let mut distribution = particles
-        .iter()
-        .map(|_| Normal::new(100., 100.).unwrap())
-        .collect_vec();
+    // let mut distribution = particles
+    //     .iter()
+    //     .map(|_| Normal::new(10000., 10000.).unwrap())
+    //     .collect_vec();
 
-    for _ in 0..1000 {
-        let sample_size = 200;
-        let elite_size = 40;
-        let mut samples = (0..sample_size)
-            .map(|_| {
-                distribution
-                    .iter()
-                    .map(|dist| dist.sample(&mut rng))
-                    .collect_vec()
-            })
-            .collect_vec();
-        samples.sort_by_cached_key(|sample| OrderedFloat(cost_fn2(sample)));
-        // dbg!(samples.iter().map(cost_fn2).collect_vec());
+    // let mut s = "".to_string();
+    // for (i, sample) in all_samples.iter().enumerate() {
+    //     let r = cost_fn(&sample) / 500000.;
+    //     let v = Vec3D::new(sample[0], sample[1], sample[2]).norm() * r;
+    //     s += format!("v {} {} {}\n", v.x, v.y, v.z).as_str();
+    //     s += format!("v {} {} {}\n", v.x, v.y + 0.01 * r, v.z).as_str();
+    //     s += format!("v {} {} {}\n", v.x, v.y, v.z + 0.01 * r).as_str();
+    //     s += format!("f {} {} {}\n", 3 * i + 1, 3 * i + 2, 3 * i + 3).as_str();
+    // }
+    // fs::write("outputs/24_cost_fn.obj", s).expect("");
 
-        // Fit a new distribution to the best samples
-        let elites = samples[0..elite_size].to_vec();
-        dbg!(cost_fn2(&elites[elite_size - 1]));
-        let fit = |i| {
-            let mean = elites.iter().map(|sample| sample[i]).sum::<f64>() / elite_size as f64;
-            let deviation = (elites
-                .iter()
-                .map(|sample| {
-                    let diff = sample[i] - mean;
-                    diff * diff
-                })
-                .sum::<f64>()
-                / elite_size as f64)
-                .sqrt();
-            // let deviation = deviation * 1.4;
-            Normal::new(mean, deviation).unwrap()
-        };
-        // distribution = [fit(0), fit(1), fit(2), fit(3), fit(4), fit(5)];
-        distribution = (0..distribution.len()).map(fit).collect();
-        // dbg!(distribution.map(|d| d.std_dev()));
-        if distribution.iter().all(|d| d.std_dev() < 0.0001) {
-            println!("converged!");
-            break;
-        }
-    }
-    dbg!(distribution
+    // dbg!(best_sample.clone());
+    // dbg!(distribution
+    //     .iter()
+    //     .map(|normal| normal.mean())
+    //     .collect_vec());
+    // dbg!(cost_fn(&best_sample));
+    // let ax_min = best_sample
+    //     .iter()
+    //     .sorted_by_key(|x| OrderedFloat((**x).abs()))
+    //     .next()
+    //     .unwrap();
+    // let signum = ax_min.signum();
+    // for i in (1..100) {
+    //     let scale = (i as f64) * signum / ax_min;
+    //     let v = best_sample.iter().map(|s| s * scale).collect_vec();
+    //     println!("{i} {v:?} {}", cost_fn(&v));
+    // }
+
+    let dir_unscaled = Vec3D::new(-337.0, -6.0, 155.0);
+    cost_fn(&vec_to_array(&dir_unscaled).to_vec());
+    let unflattened_offset = Vec3D {
+        x: 142140533135859.1,
+        y: 288472713420856.5,
+        z: 320207715789094.56,
+    };
+    let throw = (unflattened_offset, dir_unscaled);
+    let total_dist = particles
         .iter()
-        .map(|normal| normal.mean())
-        .collect_vec());
+        .map(|p| cpa_distance(&throw, p))
+        .sum::<f64>();
+    println!("{total_dist}");
+
     dbg!(answer2);
 }
 
