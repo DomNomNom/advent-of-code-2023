@@ -299,43 +299,82 @@ fn part2(particles: Vec<PosVel>) {
     // cost_fn_direction(&vec_to_array(&dir_unscaled).to_vec());
     let dir_unscaled = Vec3D::new(-337.0, -6.0, 155.0);
     println!("{dir_unscaled:?}");
-    let unflattened_offset = Vec3D {
-        x: 142140533135859.1,
-        y: 288472713420856.5,
-        z: 320207715789094.56,
-    };
-    let throw = (unflattened_offset, dir_unscaled);
-    let total_dist = particles
-        .iter()
-        .map(|p| cpa_distance(&throw, p))
-        .sum::<f64>();
-    println!("{total_dist}");
+    let s = dir_unscaled;
+    // let unflattened_offset = Vec3D {
+    //     x: 142140533135859.1,
+    //     y: 288472713420856.5,
+    //     z: 320207715789094.56,
+    // };
+    // let throw = (unflattened_offset, dir_unscaled);
+    // let total_dist = particles
+    //     .iter()
+    //     .map(|p| cpa_distance(&throw, p))
+    //     .sum::<f64>();
+    // println!("{total_dist}");
 
-    let throw_from_sample = |sample: &Vec<f64>| {
-        (
-            // unflattened_offset + dir_unscaled * sample[0],
-            // dir_unscaled * sample[1],
-            Vec3D::new(sample[0], sample[1], sample[2]),
-            dir_unscaled, // * sample[3],
-        )
-    };
-    let cost_fn_position = |sample: &Vec<f64>| -> f64 {
-        let throw = throw_from_sample(sample);
-        particles
-            .iter()
-            .map(|p| cpa_distance(&throw, p))
-            .sum::<f64>()
-    };
-    let mut distribution = vec![
-        Normal::new(0., 1000000.).unwrap(),
-        Normal::new(0., 1000000.).unwrap(),
-        Normal::new(0., 1000000.).unwrap(),
-        // Normal::new(10., 100.).unwrap(),
+    let basis_y = s.cross(Vec3D::new(1., 0., 0.)).norm();
+    let sample_basis: Mat3x3 = [
+        vec_to_array(&basis_y),
+        vec_to_array(&s.cross(basis_y).norm()),
+        vec_to_array(&s),
     ];
-    let mut rng = StdRng::seed_from_u64(4);
-    let best_sample =
-        cross_entropy_method_optimization(cost_fn_position, distribution, &mut rng, 1000, 20);
-    dbg!(throw_from_sample(&best_sample));
+    let flattened_basis: Mat3x3 = [sample_basis[0], sample_basis[1], [0., 0., 0.]];
+    // project everything onto the plane to which s is the normal.
+    let flattened_along_s = particles.iter().map(|p| {
+        (
+            mat_vec_mul(&flattened_basis, &p.0),
+            mat_vec_mul(&flattened_basis, &p.1),
+        )
+    });
+    let intersection_points_xy = flattened_along_s
+        .tuple_windows::<(_, _)>()
+        .filter_map(|(a, b)| {
+            if b.1.cross(a.1).mag() < 0.001 {
+                // println!("{} {} parallel", i, _j);
+                None
+            } else {
+                let (ta, _tb) = approach_times(&a, &b);
+                Some(a.0 + a.1 * ta)
+            }
+        })
+        .collect_vec();
+    let mean_xy = intersection_points_xy
+        .into_iter()
+        .reduce(|a, b| a + b)
+        .unwrap()
+        / (particles.len() as f64);
+    let vert = (mean_xy, Vec3D::new(0., 0., 1.));
+    let intersection_times_z = particles
+        .iter()
+        .map(|particle| approach_times(&vert, particle))
+        .collect_vec();
+    dbg!(intersection_times_z);
+
+    // let throw_from_sample = |sample: &Vec<f64>| {
+    //     (
+    //         // unflattened_offset + dir_unscaled * sample[0],
+    //         // dir_unscaled * sample[1],
+    //         Vec3D::new(sample[0], sample[1], sample[2]),
+    //         dir_unscaled, // * sample[3],
+    //     )
+    // };
+    // let cost_fn_position = |sample: &Vec<f64>| -> f64 {
+    //     let throw = throw_from_sample(sample);
+    //     particles
+    //         .iter()
+    //         .map(|p| cpa_distance(&throw, p))
+    //         .sum::<f64>()
+    // };
+    // let distribution = vec![
+    //     Normal::new(0., 1000000.).unwrap(),
+    //     Normal::new(0., 1000000.).unwrap(),
+    //     Normal::new(0., 1000000.).unwrap(),
+    //     // Normal::new(10., 100.).unwrap(),
+    // ];
+    // let mut rng = StdRng::seed_from_u64(4);
+    // let best_sample =
+    //     cross_entropy_method_optimization(cost_fn_position, distribution, &mut rng, 1000, 20);
+    // dbg!(throw_from_sample(&best_sample));
 
     dbg!(answer2);
 }

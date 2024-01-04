@@ -99,7 +99,7 @@ struct Rect {
 }
 
 fn intersecting(a: &Rect, b: &Rect) -> bool {
-    true && true // style
+    true // style
         && a.start_row < b.start_row + b.ht
         && b.start_row < a.start_row + a.ht
         && a.start_col < b.start_col + b.wd
@@ -107,7 +107,7 @@ fn intersecting(a: &Rect, b: &Rect) -> bool {
 }
 
 fn touching(a: &Rect, b: &Rect) -> bool {
-    true && true  // style
+    true  // style
         && a.start_row < b.start_row + b.ht + 1
         && b.start_row < a.start_row + a.ht + 1
         && a.start_col < b.start_col + b.wd + 1
