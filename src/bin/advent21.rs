@@ -98,49 +98,51 @@ fn main() {
     // turns out we are on a repeating pattern, so we can extrapolate with a polynomial
     let radius = |row: &usize, col: &usize| row.abs_diff(s_row) + col.abs_diff(s_col);
     // dbg!(26501365 % wd);
+    let step_offset = 65;
     let polyfit = |i: usize| {
-        let x = i - 65;
+        let x = i - step_offset;
         assert_eq!(x % wd, 0);
         let x = x / wd;
-        15427 * x * x + 15818 * x + 4052
+        15427 * x * x + 15560 * x + 3921
     };
-
-    let target_iterations = 999usize;
-    for i in 0..target_iterations {
-        if i % wd == 65 {
-            println!("{},{}", i, polyfit(i));
-        }
-    }
-    // 631357648815452 is too high
     dbg!(polyfit(26501365));
 
-    // 65,4052
-    // 196,35297
-    // 327,97396
-    // 458,190349
-    // 589,314156
-    // 720,468817
-    // 851,654332
-    // 982,870701
+    // let target_iterations = 999usize;
+    // // for i in 0..target_iterations {
+    // //     if i % wd == step_offset {
+    // //         println!("{},{}", i, polyfit(i));
+    // //     }
+    // // }
+    // // // 631357648815452 is too high
 
-    for i in 0..target_iterations {
-        // grow the possibilities
-        possibilities = possibilities
-            .iter()
-            .flat_map(|&(row, col)| {
-                [
-                    (row - 1, col),
-                    (row, col - 1),
-                    (row + 1, col),
-                    (row, col + 1),
-                ]
-            })
-            .filter(|(row, col)| !rocks.contains(&(row % ht, col % wd)))
-            .collect();
-        if i % wd == 65 {
-            println!("{},{}", (i - 65) / wd, possibilities.len());
-        }
-    }
+    // // assert_eq!(polyfit(65), 4052);
+    // // assert_eq!(polyfit(196), 35297);
+    // // assert_eq!(polyfit(327), 97396);
+    // // assert_eq!(polyfit(458), 190349);
+    // // assert_eq!(polyfit(589), 314156);
+    // // assert_eq!(polyfit(720), 468817);
+    // // assert_eq!(polyfit(851), 654332);
+    // // assert_eq!(polyfit(982), 870701);
+
+    // for i in 1..target_iterations + 1 {
+    //     // grow the possibilities
+    //     possibilities = possibilities
+    //         .iter()
+    //         .flat_map(|&(row, col)| {
+    //             [
+    //                 (row - 1, col),
+    //                 (row, col - 1),
+    //                 (row + 1, col),
+    //                 (row, col + 1),
+    //             ]
+    //         })
+    //         .filter(|(row, col)| !rocks.contains(&(row % ht, col % wd)))
+    //         .collect();
+    //     if i % wd == step_offset {
+    //         println!("{}: {}, {}", (i - step_offset) / wd, i, possibilities.len());
+    //         // assert_eq!(polyfit(i), possibilities.len());
+    //     }
+    // }
 
     // 0,3788
     // 1,34509
