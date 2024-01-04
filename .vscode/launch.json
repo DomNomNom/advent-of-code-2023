@@ -907,6 +907,43 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'advent25'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=advent25",
+                    "--package=advent_of_code_2023"
+                ],
+                "filter": {
+                    "name": "advent25",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'advent25'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=advent25",
+                    "--package=advent_of_code_2023"
+                ],
+                "filter": {
+                    "name": "advent25",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
         }
     ]
 }
